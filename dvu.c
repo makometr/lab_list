@@ -2,7 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <curses.h>
-char *delete_enter(char*); 
+#define MAX_LIST_MENU 4
+
+char *delete_enter(char*);
+void refresh_active_menu(WINDOW*, int active_string, char menu_list[MAX_LIST_MENU][16]);
+
 typedef struct person
 {
 	char name[255];
@@ -12,11 +16,15 @@ typedef struct person
 } PERSON;
 
 int main(){
+	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
 	WINDOW *menu, *logs, *list;
 	int start_x_menu, start_x_logs, start_x_list;
 	int start_y_menu, start_y_logs, start_y_list;
 	int w_menu, w_logs, w_list;
 	int h_menu, h_logs, h_list;
+
+	int active_string = 1;
+	int key;
 
 	initscr();
 	cbreak();
@@ -51,10 +59,10 @@ int main(){
 	wclear(menu);
 	box(menu, 0, 0);
 	mvwprintw(menu,0,8,"MENU");
-	mvwprintw(menu,2,4,"Add record");
-	mvwprintw(menu,4,4,"Delete record");
-	mvwprintw(menu,6,4,"Save changes");
-	mvwprintw(menu,8,4,"Quit");
+	mvwprintw(menu,2,4,"%s", menu_list[0]);
+	mvwprintw(menu,4,4,"%s", menu_list[1]);
+	mvwprintw(menu,6,4,"%s", menu_list[2]);
+	mvwprintw(menu,8,4,"%s", menu_list[3]);
 	wrefresh(menu);
 
 	wbkgdset(logs, COLOR_PAIR(2));
@@ -70,6 +78,27 @@ int main(){
 	mvwprintw(list,0,12,"LIST");
 	wrefresh(list);
 
+	while((key = getch()) != KEY_F(1)){
+        switch(key){	
+            case KEY_UP:
+				active_string--;
+				if (active_string == 0)
+					active_string = MAX_LIST_MENU;
+				mvwprintw(logs, 2, 2, "%d", active_string);
+				refresh_active_menu(menu, active_string, menu_list);
+				wrefresh(logs);
+				break;
+			
+			case KEY_DOWN:
+				active_string++;
+				if (active_string > MAX_LIST_MENU)
+					active_string = 1;
+				mvwprintw(logs, 2, 2, "%d", active_string);
+				refresh_active_menu(menu, active_string, menu_list);
+				wrefresh(logs);
+				break;
+		}
+	}
 
 	/*printw("Openning file... ");
 	FILE *f = fopen("source.txt", "r");
@@ -156,4 +185,18 @@ char* delete_enter(char* string){
 	string[strlen(string)-1] = '\0';
 	string[strlen(string)] = ' ';
 	return string;
+}
+
+void refresh_active_menu(WINDOW *WIN, int active,char menu_list[MAX_LIST_MENU][16]){
+	wattron(WIN, COLOR_PAIR(1));
+	mvwprintw(WIN,2,4,"%s", menu_list[0]);
+	mvwprintw(WIN,4,4,"%s", menu_list[1]);
+	mvwprintw(WIN,6,4,"%s", menu_list[2]);
+	mvwprintw(WIN,8,4,"%s", menu_list[3]);
+	wattron(WIN, COLOR_PAIR(2));
+	mvwprintw(WIN,active*2,4,menu_list[active-1]);
+	
+
+	wrefresh(WIN);
+	wattron(WIN, COLOR_PAIR(1));
 }
