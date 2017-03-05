@@ -3,9 +3,11 @@
 #include <string.h>
 #include <curses.h>
 #define MAX_LIST_MENU 4
+#define HEIGHT_OF_LOGS 32
 
 char *delete_enter(char*);
 void refresh_active_menu(WINDOW*, int active_string, char menu_list[MAX_LIST_MENU][16]);
+unsigned int logs_out(WINDOW*, unsigned int, char*);
 
 typedef struct person
 {
@@ -43,7 +45,7 @@ int main(){
 	start_x_logs = w_menu;
 	start_y_logs = start_y_menu;
 	w_logs = 30;
-	h_logs = 25;
+	h_logs = HEIGHT_OF_LOGS;
 
 	start_x_list = start_x_logs + w_logs;
 	start_y_list = start_y_menu;
@@ -78,13 +80,22 @@ int main(){
 	mvwprintw(list,0,12,"LIST");
 	wrefresh(list);
 
+	unsigned int y_log_curr = 0;
+	wattron(logs, COLOR_PAIR(2));
+	FILE *f = fopen("source.txt", "r");
+	if (f == NULL){
+		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Error.");
+		// return 0;
+	}
+	else 
+		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Complete.");
+
 	while((key = getch()) != KEY_F(1)){
         switch(key){	
             case KEY_UP:
 				active_string--;
 				if (active_string == 0)
 					active_string = MAX_LIST_MENU;
-				mvwprintw(logs, 2, 2, "%d", active_string);
 				refresh_active_menu(menu, active_string, menu_list);
 				wrefresh(logs);
 				break;
@@ -93,22 +104,13 @@ int main(){
 				active_string++;
 				if (active_string > MAX_LIST_MENU)
 					active_string = 1;
-				mvwprintw(logs, 2, 2, "%d", active_string);
 				refresh_active_menu(menu, active_string, menu_list);
 				wrefresh(logs);
 				break;
 		}
 	}
 
-	/*printw("Openning file... ");
-	FILE *f = fopen("source.txt", "r");
-	if (f == NULL){
-		perror("\nError");
-		return 0;
-	}
-	else 
-		printw("Complete\n"	);
-
+	/*
 	PERSON *head = NULL;
 	PERSON *current = NULL;
 	int i = 0;
@@ -199,4 +201,19 @@ void refresh_active_menu(WINDOW *WIN, int active,char menu_list[MAX_LIST_MENU][1
 
 	wrefresh(WIN);
 	wattron(WIN, COLOR_PAIR(1));
+}
+
+unsigned int logs_out(WINDOW* WIN, unsigned int y_log_curr ,char* string){
+	if (++y_log_curr > HEIGHT_OF_LOGS/2 - 2){
+		wbkgdset(WIN, COLOR_PAIR(2));
+		wclear(WIN);
+		box(WIN, 0, 0);
+		mvwprintw(WIN,0,12,"LOGS");
+		wrefresh(WIN);
+		y_log_curr = 1;
+	}
+
+	mvwprintw(WIN,y_log_curr*2, 1, "%s", string);
+	wrefresh(WIN);
+	return y_log_curr;
 }
