@@ -20,7 +20,8 @@ typedef struct paper
 int price_length(int price);
 int create_list(FILE *f,PAPER **HEAD);
 void win_list_update(WINDOW* WIN, PAPER *head);
-
+void refresh_active_logs(WINDOW* WIN, PAPER *head, int active_string);
+int newActiveWindow(int active_string);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -32,8 +33,11 @@ int main(){
 	int h_menu, h_logs, h_list, h_addMenu;
 
 	unsigned int y_log_curr = 0;
-	int active_string = 1;
+	int active_string_menu = 1;
+	int active_string_list = 1;
+	int activeWindow;
 	int key;
+	int error = 0;
 
 	initscr();
 	cbreak();
@@ -78,7 +82,7 @@ int main(){
 	mvwprintw(menu,4,3,"%s", menu_list[1]);
 	mvwprintw(menu,6,3,"%s", menu_list[2]);
 	mvwprintw(menu,8,3,"%s", menu_list[3]);
-	refresh_active_menu(menu, active_string, menu_list);
+	refresh_active_menu(menu, active_string_menu, menu_list);
 	wrefresh(menu);
 
 	wbkgdset(logs, COLOR_PAIR(2));
@@ -108,38 +112,39 @@ int main(){
 	FILE *f = fopen("source.txt", "r");
 	if (f == NULL){
 		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Error.");
-		// return 0;
+		error = 1;
 	}
 	else {
 		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Complete.");
-		int lol = create_list(f, &HEAD);
+		create_list(f, &HEAD);
 		win_list_update(list, HEAD);
+		y_log_curr = logs_out(logs, y_log_curr, "List has been created");
 		wrefresh(list);
-		if (lol == 0)
-			y_log_curr = logs_out(logs, y_log_curr, "Problem with data reading");
-		else 
-			y_log_curr = logs_out(logs, y_log_curr, "List has been created");
+	}
+	activeWindow = 1;
+	while((key = getch()) != KEY_F(1)){
+		switch(activeWindow){
+			case 1: // menu //
+        		switch(key){	
+            		case KEY_UP:
+						active_string_menu--;
+						if (active_string_menu == 0)
+							active_string_menu = MAX_LIST_MENU;
+						refresh_active_menu(menu, active_string_menu, menu_list);
+						break;
+			
+					case KEY_DOWN:
+						active_string_menu++;
+						if (active_string_menu > MAX_LIST_MENU)
+							active_string_menu = 1;
+						refresh_active_menu(menu, active_string_menu, menu_list);
+						break;
+					case '\n':
+						activeWindow = newActiveWindow(active_string_menu);
+				}
+			}
 	}
 
-	while((key = getch()) != KEY_F(1)){
-        switch(key){	
-            case KEY_UP:
-				active_string--;
-				if (active_string == 0)
-					active_string = MAX_LIST_MENU;
-				refresh_active_menu(menu, active_string, menu_list);
-				wrefresh(logs);
-				break;
-			
-			case KEY_DOWN:
-				active_string++;
-				if (active_string > MAX_LIST_MENU)
-					active_string = 1;
-				refresh_active_menu(menu, active_string, menu_list);
-				wrefresh(logs);
-				break;
-		}
-	}
 
 	/*
 
@@ -233,7 +238,6 @@ int create_list(FILE *f, PAPER **head){
 		PAPER *tmp = (PAPER*)malloc(sizeof(PAPER));
 		fscanf(f, "%s\n", &tmp->name);
 		fscanf(f, "%d\n", &tmp->price);
-			//printf("Problem with data-reading. Check file source.txt\n");
 		if (i++ == 0){ 
 			(*head) = tmp;
 			tmp->prev = NULL;
@@ -279,4 +283,19 @@ int price_length(int price){
 			length++;
 		}
 	return length;
+}
+
+
+
+int newActiveWindow(int active_string){
+	switch(active_string){
+		case 1: 
+			return 4;
+		case 3:
+			return 3;
+		case 5: 
+			return 1;
+		case 7: 
+			return 1;
+	}
 }
