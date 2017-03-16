@@ -17,7 +17,9 @@ typedef struct paper
 	struct paper *prev;
 } PAPER;
 
+int price_length(int price);
 int create_list(FILE *f,PAPER **HEAD);
+void win_list_update(WINDOW* WIN, PAPER *head);
 
 
 int main(){
@@ -111,7 +113,7 @@ int main(){
 	else {
 		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Complete.");
 		int lol = create_list(f, &HEAD);
-		mvwprintw(list,3,1,"%s", HEAD->name);
+		win_list_update(list, HEAD);
 		wrefresh(list);
 		if (lol == 0)
 			y_log_curr = logs_out(logs, y_log_curr, "Problem with data reading");
@@ -245,4 +247,36 @@ int create_list(FILE *f, PAPER **head){
 		(*head)->prev = current;
 	}
 	return i;
+}
+
+void win_list_update(WINDOW* WIN, PAPER *head){
+	wbkgdset(WIN, COLOR_PAIR(1));
+	wclear(WIN);
+	box(WIN, 0, 0);
+	mvwprintw(WIN,0,12,"LIST");
+
+	int y = 2;
+	PAPER* ptr = head;
+	do {
+		mvwprintw(WIN,y,1,"%s", ptr->name);
+		for (int i = 1 + strlen(ptr->name); i < 28 - price_length(ptr->price) + 1; i++)
+			mvwprintw(WIN, y, i ,".");
+		mvwprintw(WIN,y,28 - price_length(ptr->price),"%d$", ptr->price);
+		ptr = ptr->next;
+		y+=2;
+	}
+	while (ptr != head);
+
+	wrefresh(WIN);
+
+}
+
+int price_length(int price){
+	int length = 0;
+	while (price != 0)
+		{
+			price /= 10;
+			length++;
+		}
+	return length;
 }
