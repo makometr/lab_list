@@ -354,14 +354,44 @@ void draw_addMenu(WINDOW* WIN){
 void getNewRecordAddMenu(WINDOW *WIN, PAPER *head){
 	echo();
 	int key;
-	char string[MAX_LEGTH_OF_NAME_PAPER];
+	char new_name[MAX_LEGTH_OF_NAME_PAPER];
+	int new_price;
 	int active_string = 1;
-	int OK_records = 0;
+	int OK_record = 0;
+
 	wattron(WIN, COLOR_PAIR(1));
-	mvwgetstr(WIN, 4, 3, string);
-	OK_records++;
-	mvwgetstr(WIN, 8, 3, string);
-	OK_records++;
+
+	mvwgetstr(WIN, 4, 3, new_name);
+	box(WIN, 0, 0);
+	mvwprintw(WIN,0,5,"ADD RECORD");
+	wrefresh(WIN);
+	while(strlen(new_name) == 0){
+		// вывод лога
+		mvwgetstr(WIN, 4, 3, new_name);
+		box(WIN, 0, 0);
+		mvwprintw(WIN,0,5,"ADD RECORD");
+		wrefresh(WIN);
+	}
+
+	OK_record = mvwscanw(WIN, 8, 3, "%d", &new_price);
+	box(WIN, 0, 0);
+	mvwprintw(WIN,0,5,"ADD RECORD");
+	wrefresh(WIN);
+	while(OK_record != 1) {
+		mvwprintw(WIN, 8, 3, "                ");
+		mvwprintw(WIN, 9, 1, "                   ");
+		// вывод лога
+		OK_record = mvwscanw(WIN, 8, 3, "%d", &new_price);
+		box(WIN, 0, 0);
+		mvwprintw(WIN,0,5,"ADD RECORD");
+		wrefresh(WIN);
+	}
+
+	OK_record = mvwscanw(WIN, 8, 3, "%d", &new_price);
+	mvwprintw(WIN, 1, 0, "%d", new_price);
+
+
+	wrefresh(WIN);
 	noecho();
 	wbkgdset(WIN, COLOR_PAIR(2));
 	wclear(WIN);
