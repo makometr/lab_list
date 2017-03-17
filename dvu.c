@@ -6,7 +6,6 @@
 #define HEIGHT_OF_LOGS 32
 #define MAX_LEGTH_OF_NAME_PAPER 24
 
-char *delete_enter(char*);
 void refresh_active_menu(WINDOW*, int active_string, char menu_list[MAX_LIST_MENU][16]);
 unsigned int logs_out(WINDOW*, unsigned int, char*);
 
@@ -24,7 +23,7 @@ void win_list_update(WINDOW* WIN, PAPER *head);
 void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string);
 int newActiveWindow(int active_string);
 void draw_addMenu(WINDOW* WIN);
-void getNewRecordAddMenu(WINDOW *WIN, PAPER *head);
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -138,8 +137,8 @@ int main(){
 							refresh_active_list(list, HEAD, active_string_list);
 						if (activeWindow == 4){
 							draw_addMenu(addMenu);
-							getNewRecordAddMenu(addMenu, HEAD);
-
+							getNewRecordAddMenu(addMenu, &HEAD);
+							win_list_update(list, HEAD);
 							activeWindow = 1;
 						}
 						break;
@@ -168,62 +167,9 @@ int main(){
 			}
 		}
 	}
-
-
-	/*
-
-
-	printw("Closing file... ");
-	if (fclose(f) != 0)
-		perror("\nError");
-	else 
-		printw("Complete\n"	);
-
-	if (data_error != 0)
-		return 0;
-	printw("Press Esc to exit.\n");
-	printw("Press F2 to add a new record.\n");
-	printw("Press F3 to delete.\n");
-	printw("Press the right-arrow to see the next element.\n");
-	printw("Press the left-arrow key to see the next element.\n");
-	PERSON *ptr = head;
-	i = 0;
-	printw("%i) Name: %s price: %d\n", ++i, ptr->name, ptr->price);
-	int key;
-	while((key = getch()) != KEY_F(1)){
-        switch(key){	
-            case KEY_RIGHT:
-				if (ptr->next != NULL){
-					ptr = ptr->next;
-					printw("%i) Name: %s price: %d\n", ++i, ptr->name, ptr->price);
-				}
-				else printw("The end of data.\n");
-				break;
-			case KEY_LEFT:
-				if (ptr->prev != NULL){
-					ptr = ptr->prev;
-					printw("%i) Name: %s price: %d\n", --i, ptr->name, ptr->price);
-				}
-				else printw("The end of data.\n");	
-			default:
-				break;
-		}
-	}
-	/*
-	while (ptr){
-		printw("Name: %s price: %d\n", ptr->name, ptr->price);
-		ptr = ptr->next;
-	}
-	*/
 	getch();
 	endwin();
 	return 0;
-}
-
-char* delete_enter(char* string){
-	string[strlen(string)-1] = '\0';
-	string[strlen(string)] = ' ';
-	return string;
 }
 
 void refresh_active_menu(WINDOW *WIN, int active,char menu_list[MAX_LIST_MENU][16]){
@@ -351,12 +297,10 @@ void draw_addMenu(WINDOW* WIN){
 		wrefresh(WIN);
 	}
 
-void getNewRecordAddMenu(WINDOW *WIN, PAPER *head){
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head){
 	echo();
-	int key;
 	char new_name[MAX_LEGTH_OF_NAME_PAPER];
 	int new_price;
-	int active_string = 1;
 	int OK_record = 0;
 
 	wattron(WIN, COLOR_PAIR(1));
@@ -387,9 +331,15 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER *head){
 		wrefresh(WIN);
 	}
 
-	OK_record = mvwscanw(WIN, 8, 3, "%d", &new_price);
-	mvwprintw(WIN, 1, 0, "%d", new_price);
+	PAPER *tmp = (PAPER*)malloc(sizeof(PAPER));
+	strcpy(tmp->name, new_name);
+	tmp->price = new_price;
 
+	((*head)->prev)->next = tmp;
+	tmp->prev = (*head)->prev;
+	(*head)->prev = tmp;
+	tmp->next = (*head);
+	// вывод лога 
 
 	wrefresh(WIN);
 	noecho();
