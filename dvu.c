@@ -7,7 +7,7 @@
 #define MAX_LEGTH_OF_NAME_PAPER 24
 
 void refresh_active_menu(WINDOW*, int active_string, char menu_list[MAX_LIST_MENU][16]);
-unsigned int logs_out(WINDOW*, unsigned int, char*);
+void logs_out(WINDOW* WIN, char* string);
 
 typedef struct paper
 {
@@ -23,7 +23,7 @@ void win_list_update(WINDOW* WIN, PAPER *head);
 void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string);
 int newActiveWindow(int active_string);
 void draw_addMenu(WINDOW* WIN);
-void getNewRecordAddMenu(WINDOW *WIN, PAPER **head);
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *logs);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -34,7 +34,6 @@ int main(){
 	int w_menu, w_logs, w_list, w_addMenu;
 	int h_menu, h_logs, h_list, h_addMenu;
 
-	unsigned int y_log_curr = 0;
 	int active_string_menu = 1;
 	int active_string_list = 1;
 	int activeWindow;
@@ -103,14 +102,14 @@ int main(){
 	wattron(logs, COLOR_PAIR(2));
 	FILE *f = fopen("source.txt", "r");
 	if (f == NULL){
-		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Error.");
+		logs_out(logs, "Openning file... Error.");
 		error = 1;
 	}
 	else {
-		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Complete.");
+		logs_out(logs, "Openning file... Complete.");
 		number_of_records = create_list(f, &HEAD);
 		win_list_update(list, HEAD);
-		y_log_curr = logs_out(logs, y_log_curr, "List has been created");
+		logs_out(logs, "List has been created");
 		wrefresh(list);
 	}
 	activeWindow = 1;
@@ -137,7 +136,7 @@ int main(){
 							refresh_active_list(list, HEAD, active_string_list);
 						if (activeWindow == 4){
 							draw_addMenu(addMenu);
-							getNewRecordAddMenu(addMenu, &HEAD);
+							getNewRecordAddMenu(addMenu, &HEAD, logs);
 							win_list_update(list, HEAD);
 							activeWindow = 1;
 						}
@@ -184,7 +183,8 @@ void refresh_active_menu(WINDOW *WIN, int active,char menu_list[MAX_LIST_MENU][1
 	wattron(WIN, COLOR_PAIR(1));
 }
 
-unsigned int logs_out(WINDOW* WIN, unsigned int y_log_curr ,char* string){
+void logs_out(WINDOW* WIN, char* string){
+	static int y_log_curr = 0;
 	if (++y_log_curr > HEIGHT_OF_LOGS/2 - 2){
 		wbkgdset(WIN, COLOR_PAIR(2));
 		wclear(WIN);
@@ -194,9 +194,8 @@ unsigned int logs_out(WINDOW* WIN, unsigned int y_log_curr ,char* string){
 		y_log_curr = 1;
 	}
 
-	mvwprintw(WIN,y_log_curr*2, 1, "%s", string);
+	mvwprintw(WIN,y_log_curr * 2, 1, "%s", string);
 	wrefresh(WIN);
-	return y_log_curr;
 }
 
 int create_list(FILE *f, PAPER **head){
@@ -240,9 +239,7 @@ void win_list_update(WINDOW* WIN, PAPER *head){
 		y+=2;
 	}
 	while (ptr != head);
-
 	wrefresh(WIN);
-
 }
 
 
@@ -297,7 +294,7 @@ void draw_addMenu(WINDOW* WIN){
 		wrefresh(WIN);
 	}
 
-void getNewRecordAddMenu(WINDOW *WIN, PAPER **head){
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *LOG){
 	echo();
 	char new_name[MAX_LEGTH_OF_NAME_PAPER];
 	int new_price;
@@ -310,7 +307,7 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER **head){
 	mvwprintw(WIN,0,5,"ADD RECORD");
 	wrefresh(WIN);
 	while(strlen(new_name) == 0){
-		// вывод лога
+		logs_out(LOG, "No symbol. Repeat.");
 		mvwgetstr(WIN, 4, 3, new_name);
 		box(WIN, 0, 0);
 		mvwprintw(WIN,0,5,"ADD RECORD");
@@ -324,7 +321,7 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER **head){
 	while(OK_record != 1) {
 		mvwprintw(WIN, 8, 3, "                ");
 		mvwprintw(WIN, 9, 1, "                   ");
-		// вывод лога
+		logs_out(LOG, "Format error. Repeat.");
 		OK_record = mvwscanw(WIN, 8, 3, "%d", &new_price);
 		box(WIN, 0, 0);
 		mvwprintw(WIN,0,5,"ADD RECORD");
@@ -339,7 +336,7 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER **head){
 	tmp->prev = (*head)->prev;
 	(*head)->prev = tmp;
 	tmp->next = (*head);
-	// вывод лога 
+	logs_out(LOG, "New record created.");
 
 	wrefresh(WIN);
 	noecho();
