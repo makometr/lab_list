@@ -4,6 +4,7 @@
 #include <curses.h>
 #define MAX_LIST_MENU 4
 #define HEIGHT_OF_LOGS 32
+#define MAX_LEGTH_OF_NAME_PAPER 24
 
 char *delete_enter(char*);
 void refresh_active_menu(WINDOW*, int active_string, char menu_list[MAX_LIST_MENU][16]);
@@ -11,7 +12,7 @@ unsigned int logs_out(WINDOW*, unsigned int, char*);
 
 typedef struct paper
 {
-	char name[255];
+	char name[MAX_LEGTH_OF_NAME_PAPER];
 	int price;
 	struct paper *next;
 	struct paper *prev;
@@ -22,6 +23,8 @@ int create_list(FILE *f,PAPER **HEAD);
 void win_list_update(WINDOW* WIN, PAPER *head);
 void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string);
 int newActiveWindow(int active_string);
+void draw_addMenu(WINDOW* WIN);
+void getNewRecordAddMenu(WINDOW *WIN, PAPER *head);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -98,17 +101,6 @@ int main(){
 	mvwprintw(list,0,12,"LIST");
 	wrefresh(list);
 
-	wbkgdset(addMenu, COLOR_PAIR(2));
-	wclear(addMenu);
-	box(addMenu, 0, 0);
-	mvwprintw(addMenu,0,5,"ADD RECORD");
-	mvwprintw(addMenu,2,3,"Name of Paper:");
-	mvwprintw(addMenu,4,3,"_");
-	mvwprintw(addMenu,6,3,"Price:");
-	mvwprintw(addMenu,8,3,"_");
-	mvwprintw(addMenu,10,1,"Press Enter to add");
-	wrefresh(addMenu);
-
 	wattron(logs, COLOR_PAIR(2));
 	FILE *f = fopen("source.txt", "r");
 	if (f == NULL){
@@ -144,11 +136,17 @@ int main(){
 						activeWindow = newActiveWindow(active_string_menu);
 						if (activeWindow == 3)
 							refresh_active_list(list, HEAD, active_string_list);
+						if (activeWindow == 4){
+							draw_addMenu(addMenu);
+							getNewRecordAddMenu(addMenu, HEAD);
+
+							activeWindow = 1;
+						}
 						break;
 				}
 			break;
 			}
-			case 3: // list //
+			case 3:{ // list //
 				switch(key){
 					case KEY_UP:
 						active_string_list--;
@@ -166,7 +164,9 @@ int main(){
 						activeWindow = 1;
 						break;
 				}
+			break;
 			}
+		}
 	}
 
 
@@ -336,4 +336,35 @@ int newActiveWindow(int active_string){
 		case 4: 
 			return 1;
 	}
+}
+
+void draw_addMenu(WINDOW* WIN){
+		wbkgdset(WIN, COLOR_PAIR(1));
+		wclear(WIN);
+		box(WIN, 0, 0);
+		mvwprintw(WIN,0,5,"ADD RECORD");
+		mvwprintw(WIN,2,3,"Name of Paper:");
+		mvwprintw(WIN,4,3,"_");
+		mvwprintw(WIN,6,3,"Price:");
+		mvwprintw(WIN,8,3,"_");
+		mvwprintw(WIN,10,1,"Press Enter to add");
+		wrefresh(WIN);
+	}
+
+void getNewRecordAddMenu(WINDOW *WIN, PAPER *head){
+	echo();
+	int key;
+	char string[MAX_LEGTH_OF_NAME_PAPER];
+	int active_string = 1;
+	int OK_records = 0;
+	wattron(WIN, COLOR_PAIR(1));
+	mvwgetstr(WIN, 4, 3, string);
+	OK_records++;
+	mvwgetstr(WIN, 8, 3, string);
+	OK_records++;
+	noecho();
+	wbkgdset(WIN, COLOR_PAIR(2));
+	wclear(WIN);
+	wrefresh(WIN);
+	wbkgdset(WIN, COLOR_PAIR(1));
 }
