@@ -20,7 +20,7 @@ typedef struct paper
 int price_length(int price);
 int create_list(FILE *f,PAPER **HEAD);
 void win_list_update(WINDOW* WIN, PAPER *head);
-void refresh_active_logs(WINDOW* WIN, PAPER *head, int active_string);
+void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string);
 int newActiveWindow(int active_string);
 
 int main(){
@@ -38,6 +38,7 @@ int main(){
 	int activeWindow;
 	int key;
 	int error = 0;
+	int number_of_records;
 
 	initscr();
 	cbreak();
@@ -116,7 +117,7 @@ int main(){
 	}
 	else {
 		y_log_curr = logs_out(logs, y_log_curr, "Openning file... Complete.");
-		create_list(f, &HEAD);
+		number_of_records = create_list(f, &HEAD);
 		win_list_update(list, HEAD);
 		y_log_curr = logs_out(logs, y_log_curr, "List has been created");
 		wrefresh(list);
@@ -124,7 +125,7 @@ int main(){
 	activeWindow = 1;
 	while((key = getch()) != KEY_F(1)){
 		switch(activeWindow){
-			case 1: // menu //
+			case 1:{ // menu //
         		switch(key){	
             		case KEY_UP:
 						active_string_menu--;
@@ -141,6 +142,29 @@ int main(){
 						break;
 					case '\n':
 						activeWindow = newActiveWindow(active_string_menu);
+						if (activeWindow == 3)
+							refresh_active_list(list, HEAD, active_string_list);
+						break;
+				}
+			break;
+			}
+			case 3: // list //
+				switch(key){
+					case KEY_UP:
+						active_string_list--;
+						if (active_string_list == 0)
+							active_string_list = number_of_records;
+						refresh_active_list(list, HEAD, active_string_list);
+						break;
+					case KEY_DOWN:
+						active_string_list++;
+						if (active_string_list > number_of_records)
+							active_string_list = 1;
+						refresh_active_list(list, HEAD, active_string_list);
+						break;
+					case '\n':
+						activeWindow = 1;
+						break;
 				}
 			}
 	}
@@ -275,6 +299,22 @@ void win_list_update(WINDOW* WIN, PAPER *head){
 
 }
 
+
+void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string){
+	PAPER* ptr = head;
+	for(int i = 0; i < active_string - 1; i++)
+		ptr = ptr->next;
+	win_list_update(WIN, head);
+	wattron(WIN, COLOR_PAIR(2));
+	mvwprintw(WIN, active_string * 2, 1,"%s", ptr->name);
+		for (int i = 1 + strlen(ptr->name); i < 28 - price_length(ptr->price) + 1; i++)
+			mvwprintw(WIN, active_string * 2, i ,".");
+		mvwprintw(WIN, active_string * 2, 28 - price_length(ptr->price),"%d$", ptr->price);
+	wrefresh(WIN);
+	wattron(WIN, COLOR_PAIR(1));
+
+}
+
 int price_length(int price){
 	int length = 0;
 	while (price != 0)
@@ -285,17 +325,15 @@ int price_length(int price){
 	return length;
 }
 
-
-
 int newActiveWindow(int active_string){
 	switch(active_string){
 		case 1: 
 			return 4;
-		case 3:
+		case 2:
 			return 3;
-		case 5: 
+		case 3: 
 			return 1;
-		case 7: 
+		case 4: 
 			return 1;
 	}
 }
