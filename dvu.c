@@ -19,11 +19,12 @@ typedef struct paper
 
 int price_length(int price);
 int create_list(FILE *f,PAPER **HEAD);
-void win_list_update(WINDOW* WIN, PAPER *head);
-void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string);
+void win_list_update(WINDOW* WIN, PAPER *head, int);
+void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string, int number_of_records);
 int newActiveWindow(int active_string);
 void draw_addMenu(WINDOW* WIN);
-void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *logs);
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *logs, int);
+void delete_record(PAPER **head, WINDOW *LOGS, int active_string);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -108,7 +109,7 @@ int main(){
 	else {
 		logs_out(logs, "Openning file... Complete.");
 		number_of_records = create_list(f, &HEAD);
-		win_list_update(list, HEAD);
+		win_list_update(list, HEAD, number_of_records);
 		logs_out(logs, "List has been created");
 		wrefresh(list);
 	}
@@ -132,12 +133,20 @@ int main(){
 						break;
 					case '\n':
 						activeWindow = newActiveWindow(active_string_menu);
-						if (activeWindow == 3)
-							refresh_active_list(list, HEAD, active_string_list);
+						if (activeWindow == 3){
+								if (number_of_records == 0){
+									logs_out(LOGS, "Nothing to delete.")
+									activeWindow = 1;
+									break;
+								}
+								else 
+									refresh_active_list(list, HEAD, active_string_list, number_of_records);
+						}
 						if (activeWindow == 4){
 							draw_addMenu(addMenu);
-							getNewRecordAddMenu(addMenu, &HEAD, logs);
-							win_list_update(list, HEAD);
+							getNewRecordAddMenu(addMenu, &HEAD, logs, number_of_records);
+							number_of_records++;
+							win_list_update(list, HEAD, number_of_records);
 							activeWindow = 1;
 						}
 						break;
@@ -150,15 +159,19 @@ int main(){
 						active_string_list--;
 						if (active_string_list == 0)
 							active_string_list = number_of_records;
-						refresh_active_list(list, HEAD, active_string_list);
+						refresh_active_list(list, HEAD, active_string_list, number_of_records);
 						break;
 					case KEY_DOWN:
 						active_string_list++;
 						if (active_string_list > number_of_records)
 							active_string_list = 1;
-						refresh_active_list(list, HEAD, active_string_list);
+						refresh_active_list(list, HEAD, active_string_list, number_of_records);
 						break;
 					case '\n':
+						delete_record(&HEAD, logs,  active_string_list);
+						number_of_records--;
+						active_string_list = 1;
+						win_list_update(list, HEAD, number_of_records);
 						activeWindow = 1;
 						break;
 				}
@@ -222,12 +235,14 @@ int create_list(FILE *f, PAPER **head){
 	return i;
 }
 
-void win_list_update(WINDOW* WIN, PAPER *head){
+void win_list_update(WINDOW* WIN, PAPER *head, int number_of_records){
 	wbkgdset(WIN, COLOR_PAIR(1));
 	wclear(WIN);
 	box(WIN, 0, 0);
 	mvwprintw(WIN,0,12,"LIST");
-
+	wrefresh(WIN);
+	if (number_of_records == 0)
+		return ;
 	int y = 2;
 	PAPER* ptr = head;
 	do {
@@ -243,11 +258,14 @@ void win_list_update(WINDOW* WIN, PAPER *head){
 }
 
 
-void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string){
+void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string, int number_of_records){
+	if (active_string == 0)
+		return ;
+	
+	win_list_update(WIN, head, number_of_records);
 	PAPER* ptr = head;
 	for(int i = 0; i < active_string - 1; i++)
 		ptr = ptr->next;
-	win_list_update(WIN, head);
 	wattron(WIN, COLOR_PAIR(2));
 	mvwprintw(WIN, active_string * 2, 1,"%s", ptr->name);
 		for (int i = 1 + strlen(ptr->name); i < 28 - price_length(ptr->price) + 1; i++)
@@ -294,7 +312,7 @@ void draw_addMenu(WINDOW* WIN){
 		wrefresh(WIN);
 	}
 
-void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *LOG){
+void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *LOG, int number_of_records){
 	echo();
 	char new_name[MAX_LEGTH_OF_NAME_PAPER];
 	int new_price;
@@ -331,6 +349,10 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *LOG){
 	PAPER *tmp = (PAPER*)malloc(sizeof(PAPER));
 	strcpy(tmp->name, new_name);
 	tmp->price = new_price;
+	if (number_of_records == 0){
+		(*head) = tmp;
+		logs_out(LOG, "New head, epta!");
+	}
 
 	((*head)->prev)->next = tmp;
 	tmp->prev = (*head)->prev;
@@ -344,4 +366,19 @@ void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *LOG){
 	wclear(WIN);
 	wrefresh(WIN);
 	wbkgdset(WIN, COLOR_PAIR(1));
+}
+
+void delete_record(PAPER **head, WINDOW *LOGS, int active_string){
+	PAPER* ptr = (*head);
+	for (int i = 0; i < active_string - 1; i++)
+		ptr = ptr->next;
+
+	if ((*head)->next != *head){
+	(ptr->prev)->next = ptr->next;
+	(ptr->next)->prev = ptr->prev;
+	if (ptr == (*head))
+		(*head) = ptr->next;
+	}
+	free(ptr);
+	logs_out(LOGS, "Record deleted.");
 }
