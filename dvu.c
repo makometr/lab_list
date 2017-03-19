@@ -41,6 +41,7 @@ int main(){
 	int key;
 	int error = 0;
 	int number_of_records;
+	bool is_quite;
 
 	initscr();
 	cbreak();
@@ -114,7 +115,7 @@ int main(){
 		wrefresh(list);
 	}
 	activeWindow = 1;
-	while((key = getch()) != KEY_F(1)){
+	while((key = getch()) != KEY_F(1) && is_quite != TRUE){
 		switch(activeWindow){
 			case 1:{ // menu //
         		switch(key){	
@@ -132,10 +133,15 @@ int main(){
 						refresh_active_menu(menu, active_string_menu, menu_list);
 						break;
 					case '\n':
+						if (active_string_menu == 4){
+							is_quite = TRUE;
+							halfdelay(1);
+							break;
+						}
 						activeWindow = newActiveWindow(active_string_menu);
 						if (activeWindow == 3){
 								if (number_of_records == 0){
-									logs_out(LOGS, "Nothing to delete.")
+									logs_out(logs, "Nothing to delete.");
 									activeWindow = 1;
 									break;
 								}
@@ -179,7 +185,6 @@ int main(){
 			}
 		}
 	}
-	getch();
 	endwin();
 	return 0;
 }
@@ -261,7 +266,6 @@ void win_list_update(WINDOW* WIN, PAPER *head, int number_of_records){
 void refresh_active_list(WINDOW* WIN, PAPER *head, int active_string, int number_of_records){
 	if (active_string == 0)
 		return ;
-	
 	win_list_update(WIN, head, number_of_records);
 	PAPER* ptr = head;
 	for(int i = 0; i < active_string - 1; i++)
@@ -372,7 +376,6 @@ void delete_record(PAPER **head, WINDOW *LOGS, int active_string){
 	PAPER* ptr = (*head);
 	for (int i = 0; i < active_string - 1; i++)
 		ptr = ptr->next;
-
 	if ((*head)->next != *head){
 	(ptr->prev)->next = ptr->next;
 	(ptr->next)->prev = ptr->prev;
