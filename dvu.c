@@ -39,7 +39,6 @@ int main(){
 	int active_string_list = 1;
 	int activeWindow;
 	int key;
-	int error = 0;
 	int number_of_records;
 	bool is_quite;
 
@@ -105,7 +104,8 @@ int main(){
 	FILE *f = fopen("source.txt", "r");
 	if (f == NULL){
 		logs_out(logs, "Openning file... Error.");
-		error = 1;
+		is_quite = TRUE;
+		halfdelay(10);
 	}
 	else {
 		logs_out(logs, "Openning file... Complete.");
