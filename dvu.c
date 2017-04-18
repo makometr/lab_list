@@ -25,6 +25,7 @@ int newActiveWindow(int active_string);
 void draw_addMenu(WINDOW* WIN);
 void getNewRecordAddMenu(WINDOW *WIN, PAPER **head, WINDOW *logs, int);
 void delete_record(PAPER **head, WINDOW *LOGS, int active_string);
+void saveChanges(FILE **f, PAPER *head);
 
 int main(){
 	char menu_list[MAX_LIST_MENU][16] = {"Add record", "Delete record", "Save changes", "Quit"};
@@ -41,6 +42,7 @@ int main(){
 	int key;
 	int number_of_records;
 	bool is_quite;
+	bool is_change = FALSE;
 
 	initscr();
 	cbreak();
@@ -138,6 +140,17 @@ int main(){
 							halfdelay(1);
 							break;
 						}
+						if (active_string_menu == 3){
+							if (is_change == FALSE){
+								logs_out(logs, "No changes to save.");
+							}
+							else {
+								saveChanges(&f, HEAD);
+								logs_out(logs, "Changes are saved.");
+								is_change = FALSE;
+							}
+							break;
+						}
 						activeWindow = newActiveWindow(active_string_menu);
 						if (activeWindow == 3){
 								if (number_of_records == 0){
@@ -145,13 +158,16 @@ int main(){
 									activeWindow = 1;
 									break;
 								}
-								else 
+								else {
 									refresh_active_list(list, HEAD, active_string_list, number_of_records);
+									is_change = TRUE;
+								}
 						}
 						if (activeWindow == 4){
 							draw_addMenu(addMenu);
 							getNewRecordAddMenu(addMenu, &HEAD, logs, number_of_records);
 							number_of_records++;
+							is_change = TRUE;
 							win_list_update(list, HEAD, number_of_records);
 							activeWindow = 1;
 						}
@@ -384,4 +400,20 @@ void delete_record(PAPER **head, WINDOW *LOGS, int active_string){
 	}
 	free(ptr);
 	logs_out(LOGS, "Record deleted.");
+}
+
+void saveChanges(FILE **f, PAPER *head){
+	fclose(*f);
+	FILE *tmp = fopen ("source.txt", "w");
+	PAPER *ptr = head;
+	do 
+	{
+		fprintf(tmp, "%s\n", ptr->name);
+		fprintf(tmp, "%d\n", ptr->price);
+		ptr = ptr->next;
+	}
+	while (ptr != head);
+	fclose(tmp);
+	(*f) = fopen("source.txt", "r");
+
 }
